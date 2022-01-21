@@ -1,5 +1,7 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, url_for
 from flask_migrate import Migrate
+from werkzeug.utils import redirect
+
 from database import db
 from forms import PersonForm
 from models import Person
@@ -48,4 +50,12 @@ def get_detail(id):
 def add():
     person = Person()
     personForm = PersonForm(obj=person)
+    if request.method == 'POST':
+        if personForm.validate_on_submit():
+            personForm.populate_obj(person)
+            app.logger.debug(f'Person to insert: {person}')
+            # Insert new person
+            db.session.add(person)
+            db.session.commit()
+            return redirect(url_for('index'))
     return render_template('add.html', personForm=personForm)
