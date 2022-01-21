@@ -32,14 +32,15 @@ app.config['SECRET_KEY']='secret_key'
 @app.route('/index.html')
 def index():
     # People List
-    people = Person.query.all()
+    # people = Person.query.all()
+    people = Person.query.order_by('id')
     total_people = Person.query.count()
     app.logger.debug(f'People List: {people}')
     app.logger.debug(f'Total people: {total_people}')
     return render_template('index.html', people=people, total_people=total_people)
 
-@app.route('/get_detail/<int:id>')
-def get_detail(id):
+@app.route('/get/<int:id>')
+def get(id):
     # Get person by id
     # person = Person.query.get(id)
     person = Person.query.get_or_404(id)
@@ -59,3 +60,26 @@ def add():
             db.session.commit()
             return redirect(url_for('index'))
     return render_template('add.html', personForm=personForm)
+
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+def edit(id):
+    # Get person object
+    person = Person.query.get_or_404(id)
+    personForm = PersonForm(obj=person)
+    if request.method == 'POST':
+        if personForm.validate_on_submit():
+            personForm.populate_obj(person)
+            app.logger.debug(f'Person to edit: {person}')
+            db.session.commit()
+            return redirect(url_for('index'))
+    return render_template('edit.html', personForm=personForm)
+
+@app.route('/delete/<int:id>')
+def delete(id):
+    # Get person object
+    person = Person.query.get_or_404(id)
+    app.logger.debug(f'Person to delete: {person}')
+    # Delete person
+    db.session.delete(person)
+    db.session.commit()
+    return redirect(url_for('index'))
